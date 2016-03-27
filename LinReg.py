@@ -1,7 +1,8 @@
 # Author: Ethan Sargent
 #
-# The following is an implementation of multiple linear regression (for an
-# arbitrary number of parameters) using gradient descent.
+# The following is an implementation of regularized, multiple linear regression
+# (for an arbitrary number of parameters) using gradient descent. I learned the
+# algorithm from Andrew Ng's free online lecture.
 #
 # In the example, we predict weight from blood pressure and age, and plot the
 # decrease of the cost function over time to verify gradient descent is
@@ -35,10 +36,10 @@ def gradient_descent(X, Y, iterations, alpha, l = 0):
         errors = np.array([0.0]*len(betas))
         errors[0] = sum(sumterms) # error term for B0 has no multiplier
         for k in range(1,len(betas)):
-            errors[k] = np.dot(sumterms, [row[k-1] for row in X])
+            errors[k] = np.dot(sumterms, [row[k-1] for row in X]) + l/m*betas[k]
             
         betas = betas - alpha * errors
-        costs[i] = cost(X, Y, betas)
+        costs[i] = cost(X, Y, betas, l)
     
     return betas, costs
 
@@ -46,14 +47,17 @@ def estimation(xvec, betas):
     # B0 + B1*X1 + B2*X2 + ... + Bp * Xp
     return (betas[0] + np.dot(xvec, betas[1:]))
     
-def cost(X, Y, betas):
+def cost(X, Y, betas, l):
     # the total cost for our data for some betas; higher cost indicates worse
     # performing betas and/or too large betas i.e. overfitting
     total_cost = 0
     
     for i in range(len(data)):
         total_cost += (estimation(X[i], betas) - Y[i])**2
-        
+    
+    # regularization
+    total_cost += l*sum([beta**2 for beta in betas])
+    
     return total_cost/(2*len(X))
     
 # column to predict
@@ -68,7 +72,7 @@ Y = np.array([row[c] for row in data])
 
 # we use quite a low alpha; for alpha around .01-.001 errors diverge
 # for this data set.
-betas, costs = gradient_descent(X,Y, 1000, .00001)
+betas, costs = gradient_descent(X,Y, 1000, .00001, 0)
 
 # on this data set, cost descends incredibly quickly
 plt.plot(range(len(costs)), costs)
